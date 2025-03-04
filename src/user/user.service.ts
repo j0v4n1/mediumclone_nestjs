@@ -25,6 +25,10 @@ export class UserService {
     }
   }
 
+  async findById(id: number): Promise<UserEntity | null> {
+    return await this.userRepository.findOne({ where: { id } });
+  }
+
   buildUserResponse(user: UserEntity): UserResponseInterface {
     const token = this.generateToken(user);
     return {
