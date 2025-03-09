@@ -1,13 +1,14 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateUserDto } from '@app/user/dto/createUser.dto';
+import { CreateUserDto } from '@app/user/dto/create-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '@app/user/user.entity';
 import { Repository } from 'typeorm';
 import { sign } from 'jsonwebtoken';
 import 'dotenv/config';
-import { FindUserDto } from '@app/user/dto/findUser.dto';
+import { FindUserDto } from '@app/user/dto/find-user.dto';
 import { compare } from 'bcrypt';
-import { UserResponseInterface } from '@app/user/types/userResponse.interface';
+import { UserResponseInterface } from '@app/user/types/user-response.interface';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -85,5 +86,17 @@ export class UserService {
     delete user.password;
 
     return user;
+  }
+
+  async updateUser(
+    userId: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserEntity> {
+    const user = await this.findById(userId);
+    if (user) {
+      Object.assign(user, updateUserDto);
+      return await this.userRepository.save(user);
+    }
+    throw new HttpException('Ther is no user', HttpStatus.BAD_REQUEST);
   }
 }

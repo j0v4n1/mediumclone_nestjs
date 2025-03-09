@@ -18,6 +18,6 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    throw new HttpException('Nit authorized', HttpStatus.UNAUTHORIZED);
+    throw new HttpException('Not authorized', HttpStatus.UNAUTHORIZED);
   }
 }
