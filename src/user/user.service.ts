@@ -40,7 +40,7 @@ export class UserService {
     };
   }
 
-  async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
+  async create(createUserDto: CreateUserDto): Promise<UserEntity> {
     const userByEmail = await this.userRepository.findOne({
       where: {
         email: createUserDto.email,
@@ -52,17 +52,14 @@ export class UserService {
       },
     });
     if (userByEmail || userByUsername) {
-      throw new HttpException(
-        'email or username are taken',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      throw new HttpException('email or username are taken', HttpStatus.UNPROCESSABLE_ENTITY);
     }
     const newUser = new UserEntity();
     Object.assign(newUser, createUserDto);
     return await this.userRepository.save(newUser);
   }
 
-  async findUser(findUserDto: FindUserDto): Promise<UserEntity> {
+  async findOne(findUserDto: FindUserDto): Promise<UserEntity> {
     const user = await this.userRepository.findOne({
       where: {
         email: findUserDto.email,
@@ -88,15 +85,12 @@ export class UserService {
     return user;
   }
 
-  async updateUser(
-    userId: number,
-    updateUserDto: UpdateUserDto,
-  ): Promise<UserEntity> {
+  async update(userId: number, updateUserDto: UpdateUserDto): Promise<UserEntity> {
     const user = await this.findById(userId);
     if (user) {
       Object.assign(user, updateUserDto);
       return await this.userRepository.save(user);
     }
-    throw new HttpException('Ther is no user', HttpStatus.BAD_REQUEST);
+    throw new HttpException('User is does not exist', HttpStatus.NOT_FOUND);
   }
 }

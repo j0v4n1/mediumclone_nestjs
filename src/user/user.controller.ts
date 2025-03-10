@@ -23,38 +23,31 @@ export class UserController {
 
   @Post('users')
   @UsePipes(new ValidationPipe())
-  async createUser(
-    @Body('user') createUserDto: CreateUserDto,
-  ): Promise<UserResponseInterface> {
-    const user = await this.userService.createUser(createUserDto);
+  async create(@Body('user') createUserDto: CreateUserDto): Promise<UserResponseInterface> {
+    const user = await this.userService.create(createUserDto);
     return this.userService.buildUserResponse(user);
   }
 
   @Post('users/login')
   @UsePipes(new ValidationPipe())
-  async findUser(
-    @Body('user') findUserDto: FindUserDto,
-  ): Promise<UserResponseInterface> {
-    const user = await this.userService.findUser(findUserDto);
+  async login(@Body('user') findUserDto: FindUserDto): Promise<UserResponseInterface> {
+    const user = await this.userService.findOne(findUserDto);
     return this.userService.buildUserResponse(user);
   }
 
   @Get('user')
   @UseGuards(AuthGuard)
-  async currentUser(@User() user: UserEntity): Promise<UserResponseInterface> {
+  async findOne(@User() user: UserEntity): Promise<UserResponseInterface> {
     return this.userService.buildUserResponse(user);
   }
 
   @Put('user')
   @UseGuards(AuthGuard)
-  async updateCurrentUser(
+  async update(
     @User('id') currentUserId: number,
     @Body('user') updateUserDto: UpdateUserDto,
   ): Promise<UserResponseInterface> {
-    const user = await this.userService.updateUser(
-      currentUserId,
-      updateUserDto,
-    );
+    const user = await this.userService.update(currentUserId, updateUserDto);
     return this.userService.buildUserResponse(user);
   }
 }
