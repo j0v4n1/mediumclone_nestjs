@@ -10,5 +10,5 @@ if (process.env.PORT) {
     const app = await NestFactory.create(AppModule);
     await app.listen(process.env.PORT as string);
   }
-  bootstrap();
+  bootstrap().then();
 }

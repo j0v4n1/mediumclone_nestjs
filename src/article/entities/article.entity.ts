@@ -1,9 +1,8 @@
-import { UserEntity } from '@app/user/user.entity';
+import { UserEntity } from '@app/user/entities/user.entity';
 import {
   BeforeUpdate,
   Column,
   Entity,
-  ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';

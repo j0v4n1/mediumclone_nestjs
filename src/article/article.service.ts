@@ -1,13 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { PersistArticleDto } from './dto/persist-article.dto';
-import { UserEntity } from '@app/user/user.entity';
-import { ArticleEntity } from './entities/article.entity';
+import { PersistArticleDto } from '@app/article/dto/persist-article.dto';
+import { UserEntity } from '@app/user/entities/user.entity';
+import { ArticleEntity } from '@app/article/entities/article.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeleteResult, getRepository, Repository } from 'typeorm';
-import { ArticleResponseInterface } from './types/article-response.interface';
+import { DeleteResult, Repository } from 'typeorm';
+import { ArticleResponseInterface } from '@app/article/types/article-response.interface';
 import slugify from 'slugify';
-import { ArticlesResponseInterface } from './types/articles-response.Interface';
-import ormconfig from '@app/ormconfig';
+import { ArticlesResponseInterface } from '@app/article/types/articles-response.Interface';
 import AppDataSource from '@app/data-source';
 
 @Injectable()
@@ -15,6 +14,8 @@ export class ArticleService {
   constructor(
     @InjectRepository(ArticleEntity)
     private readonly articleRepository: Repository<ArticleEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
   ) {}
 
   async create(
@@ -41,19 +42,37 @@ export class ArticleService {
 
   private getSlug(title: string): string {
     return (
-      slugify(title, { lower: true }) + '-' + ((Math.random() * Math.pow(36, 6)) | 0).toString(36)
+      slugify(title, { lower: true }) +
+      '-' +
+      ((Math.random() * Math.pow(36, 6)) | 0).toString(36)
     );
   }
 
-  async findAll(userId: number, query: any): Promise<ArticlesResponseInterface> {
+  async findAll(
+    userId: number,
+    query: any,
+  ): Promise<ArticlesResponseInterface> {
     const queryBuilder = AppDataSource.getRepository(ArticleEntity)
       .createQueryBuilder('articles')
       .leftJoinAndSelect('articles.author', 'author');
 
     queryBuilder.orderBy('articles.createdAt', 'DESC');
 
+    if (query.tag) {
+      queryBuilder.andWhere('articles.tagList LIKE :tag', {
+        tag: `%${query.tag}%`,
+      });
+    }
+
     if (query.limit) {
       queryBuilder.limit(query.limit);
+    }
+
+    if (query.author) {
+      const author = await this.userRepository.findOne({
+        where: { username: query.author },
+      });
+      queryBuilder.andWhere('articles.authorId = :id', { id: author?.id });
     }
 
     if (query.offset) {
@@ -100,5 +119,28 @@ export class ArticleService {
     const article = await this.findBySlug(slug);
     this.isAuthorOfArticle(currentUserId, article.author.id);
     return await this.articleRepository.delete({ slug });
+  }
+
+  async addArticleToFavorites(
+    slug: string,
+    currentUserId: number,
+  ): Promise<ArticleEntity> {
+    const article = await this.findBySlug(slug);
+    const user = await this.userRepository.findOne({
+      where: { id: currentUserId },
+      relations: ['favorites'],
+    });
+    const isNotFavorited =
+      user?.favorites.findIndex(
+        (articleInFavorites) => articleInFavorites.id === article.id,
+      ) === -1;
+
+    if (isNotFavorited) {
+      user?.favorites.push(article);
+      article.favouritesCount++;
+      await this.userRepository.save(user);
+      await this.articleRepository.save(article);
+    }
+    return article;
   }
 }

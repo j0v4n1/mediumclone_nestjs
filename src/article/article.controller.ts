@@ -11,14 +11,13 @@ import {
   ValidationPipe,
   Query,
 } from '@nestjs/common';
-import { ArticleService } from './article.service';
-import { PersistArticleDto } from './dto/persist-article.dto';
+import { ArticleService } from '@app/article/article.service';
+import { PersistArticleDto } from '@app/article/dto/persist-article.dto';
 import { AuthGuard } from '@app/user/guards/auth.guard';
 import { User } from '@app/user/decorators/user.decorator';
-import { UserEntity } from '@app/user/user.entity';
-import { ArticleEntity } from './entities/article.entity';
-import { ArticleResponseInterface } from './types/article-response.interface';
-import { ArticlesResponseInterface } from './types/articles-response.Interface';
+import { UserEntity } from '@app/user/entities/user.entity';
+import { ArticleResponseInterface } from '@app/article/types/article-response.interface';
+import { ArticlesResponseInterface } from '@app/article/types/articles-response.Interface';
 
 @Controller('articles')
 export class ArticleController {
@@ -31,7 +30,10 @@ export class ArticleController {
     @User() currentUser: UserEntity,
     @Body('article') createArticleDto: PersistArticleDto,
   ): Promise<ArticleResponseInterface> {
-    const article = await this.articleService.create(currentUser, createArticleDto);
+    const article = await this.articleService.create(
+      currentUser,
+      createArticleDto,
+    );
     return this.articleService.buildArticleResponse(article);
   }
 
@@ -44,7 +46,9 @@ export class ArticleController {
   }
 
   @Get(':slug')
-  async findOne(@Param('slug') slug: string): Promise<ArticleResponseInterface> {
+  async findOne(
+    @Param('slug') slug: string,
+  ): Promise<ArticleResponseInterface> {
     const article = await this.articleService.findBySlug(slug);
     return this.articleService.buildArticleResponse(article);
   }
@@ -57,7 +61,11 @@ export class ArticleController {
     @Param('slug') slug: string,
     @Body('article') updateArticleDto: PersistArticleDto,
   ): Promise<ArticleResponseInterface> {
-    const article = await this.articleService.update(slug, currentUserId, updateArticleDto);
+    const article = await this.articleService.update(
+      slug,
+      currentUserId,
+      updateArticleDto,
+    );
     return this.articleService.buildArticleResponse(article);
   }
 
@@ -65,5 +73,18 @@ export class ArticleController {
   @UseGuards(AuthGuard)
   async delete(@User('id') currentUserId: number, @Param('slug') slug: string) {
     return await this.articleService.delete(slug, currentUserId);
+  }
+
+  @Post(':slug/favorite')
+  @UseGuards(AuthGuard)
+  async addArticleToFavorite(
+    @User('id') currentUserId: number,
+    @Param('slug') slug: string,
+  ): Promise<ArticleResponseInterface> {
+    const article = await this.articleService.addArticleToFavorites(
+      slug,
+      currentUserId,
+    );
+    return this.articleService.buildArticleResponse(article);
   }
 }

@@ -3,7 +3,7 @@
   "useTabs": false,
   "singleQuote": true,
   "quoteProps": "preserve",
-  "printWidth": 100,
+  "printWidth": 80,
   "trailingComma": "all",
   "bracketSpacing": true,
   "semi": true,

@@ -13,7 +13,7 @@ import { CreateUserDto } from '@app/user/dto/create-user.dto';
 import { UserResponseInterface } from '@app/user/types/user-response.interface';
 import { FindUserDto } from '@app/user/dto/find-user.dto';
 import { User } from '@app/user/decorators/user.decorator';
-import { UserEntity } from '@app/user/user.entity';
+import { UserEntity } from '@app/user/entities/user.entity';
 import { AuthGuard } from '@app/user/guards/auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -23,14 +23,18 @@ export class UserController {
 
   @Post('users')
   @UsePipes(new ValidationPipe())
-  async create(@Body('user') createUserDto: CreateUserDto): Promise<UserResponseInterface> {
+  async create(
+    @Body('user') createUserDto: CreateUserDto,
+  ): Promise<UserResponseInterface> {
     const user = await this.userService.create(createUserDto);
     return this.userService.buildUserResponse(user);
   }
 
   @Post('users/login')
   @UsePipes(new ValidationPipe())
-  async login(@Body('user') findUserDto: FindUserDto): Promise<UserResponseInterface> {
+  async login(
+    @Body('user') findUserDto: FindUserDto,
+  ): Promise<UserResponseInterface> {
     const user = await this.userService.findOne(findUserDto);
     return this.userService.buildUserResponse(user);
   }

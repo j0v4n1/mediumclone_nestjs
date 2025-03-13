@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from '@app/user/dto/create-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from '@app/user/user.entity';
+import { UserEntity } from '@app/user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { sign } from 'jsonwebtoken';
 import 'dotenv/config';
@@ -52,11 +52,16 @@ export class UserService {
       },
     });
     if (userByEmail || userByUsername) {
-      throw new HttpException('email or username are taken', HttpStatus.UNPROCESSABLE_ENTITY);
+      throw new HttpException(
+        'Электронная почта или юзернейм уже заняты',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     }
     const newUser = new UserEntity();
     Object.assign(newUser, createUserDto);
-    return await this.userRepository.save(newUser);
+    const savedUser = await this.userRepository.save(newUser);
+    delete savedUser.password;
+    return savedUser;
   }
 
   async findOne(findUserDto: FindUserDto): Promise<UserEntity> {
@@ -66,16 +71,17 @@ export class UserService {
       },
       select: ['id', 'username', 'email', 'bio', 'image', 'password'],
     });
+
     if (!user) {
       throw new HttpException(
-        'Sorry, this email is not registered. Please check your email or sign up for a new account.',
+        'Такой почты не существует',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
     const isValidPassword = await compare(findUserDto.password, user.password!);
     if (!isValidPassword) {
       throw new HttpException(
-        'Sorry, the password you entered is incorrect. Please try again or reset your password.',
+        'Пароль введён неверно.',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
@@ -85,7 +91,10 @@ export class UserService {
     return user;
   }
 
-  async update(userId: number, updateUserDto: UpdateUserDto): Promise<UserEntity> {
+  async update(
+    userId: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserEntity> {
     const user = await this.findById(userId);
     if (user) {
       Object.assign(user, updateUserDto);
