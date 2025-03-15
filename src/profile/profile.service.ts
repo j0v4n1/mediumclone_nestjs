@@ -1,9 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { Repository } from 'typeorm';
+import { UserEntity } from '@app/user/entities/user.entity';
 
 @Injectable()
 export class ProfileService {
+  constructor(private readonly userRepository: Repository<UserEntity>) {}
   create(createProfileDto: CreateProfileDto) {
     return 'This action adds a new profile';
   }
@@ -12,8 +15,15 @@ export class ProfileService {
     return `This action returns all profile`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} profile`;
+  async findOne(username: string) {
+    const user = await this.userRepository.findOne({ where: { username } });
+    if (!user) {
+      throw new HttpException(
+        'Такой пользователь не существует',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    return user;
   }
 
   update(id: number, updateProfileDto: UpdateProfileDto) {

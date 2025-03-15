@@ -1,7 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ProfileResponseInterface } from '@app/profile/types/profile.type';
 
 @Controller('profile')
 export class ProfileController {
@@ -17,9 +26,9 @@ export class ProfileController {
     return this.profileService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.profileService.findOne(+id);
+  @Get(':username')
+  async findOne(@Param('username') username: string): ProfileResponseInterface {
+    const user = await this.profileService.findOne(username);
   }
 
   @Patch(':id')
