@@ -15,7 +15,7 @@ import { FindUserDto } from '@app/user/dto/find-user.dto';
 import { User } from '@app/user/decorators/user.decorator';
 import { UserEntity } from '@app/user/entities/user.entity';
 import { AuthGuard } from '@app/user/guards/auth.guard';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserDto } from '@app/user/dto/update-user.dto';
 
 @Controller()
 export class UserController {
