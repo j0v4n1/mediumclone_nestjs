@@ -3,10 +3,16 @@ import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Repository } from 'typeorm';
 import { UserEntity } from '@app/user/entities/user.entity';
+import { ProfileResponseInterface } from '@app/profile/types/profile-response.interface';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ProfileType } from '@app/profile/types/profile.type';
 
 @Injectable()
 export class ProfileService {
-  constructor(private readonly userRepository: Repository<UserEntity>) {}
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+  ) {}
   create(createProfileDto: CreateProfileDto) {
     return 'This action adds a new profile';
   }
@@ -15,7 +21,7 @@ export class ProfileService {
     return `This action returns all profile`;
   }
 
-  async findOne(username: string) {
+  async findOne(currentUserId: number, username: string) {
     const user = await this.userRepository.findOne({ where: { username } });
     if (!user) {
       throw new HttpException(
@@ -23,7 +29,12 @@ export class ProfileService {
         HttpStatus.NOT_FOUND,
       );
     }
-    return user;
+    return { ...user, following: false };
+  }
+
+  buildProfileResponse(profile: ProfileType): ProfileResponseInterface {
+    delete profile.email;
+    return { profile };
   }
 
   update(id: number, updateProfileDto: UpdateProfileDto) {

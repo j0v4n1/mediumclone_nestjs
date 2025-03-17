@@ -10,9 +10,10 @@ import {
 import { ProfileService } from './profile.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { ProfileResponseInterface } from '@app/profile/types/profile.type';
+import { ProfileResponseInterface } from '@app/profile/types/profile-response.interface';
+import { User } from '@app/user/decorators/user.decorator';
 
-@Controller('profile')
+@Controller('profiles')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
@@ -27,8 +28,12 @@ export class ProfileController {
   }
 
   @Get(':username')
-  async findOne(@Param('username') username: string): ProfileResponseInterface {
-    const user = await this.profileService.findOne(username);
+  async findOne(
+    @User('id') currentUserId: number,
+    @Param('username') username: string,
+  ): Promise<ProfileResponseInterface> {
+    const profile = await this.profileService.findOne(currentUserId, username);
+    return this.profileService.buildProfileResponse(profile);
   }
 
   @Patch(':id')
