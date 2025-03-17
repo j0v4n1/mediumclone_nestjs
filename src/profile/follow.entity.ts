@@ -9,5 +9,5 @@ export class FollowEntity {
   followerId: number;
 
   @Column()
-  folowingId: number;
+  followingId: number;
 }

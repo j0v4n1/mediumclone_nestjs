@@ -6,20 +6,17 @@ import { UserEntity } from '@app/user/entities/user.entity';
 import { ProfileResponseInterface } from '@app/profile/types/profile-response.interface';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProfileType } from '@app/profile/types/profile.type';
+import { FollowEntity } from '@app/profile/follow.entity';
 
 @Injectable()
 export class ProfileService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-  ) {}
-  create(createProfileDto: CreateProfileDto) {
-    return 'This action adds a new profile';
-  }
 
-  findAll() {
-    return `This action returns all profile`;
-  }
+    @InjectRepository(FollowEntity)
+    private readonly followRepository: Repository<FollowEntity>,
+  ) {}
 
   async findOne(currentUserId: number, username: string) {
     const user = await this.userRepository.findOne({ where: { username } });
@@ -37,11 +34,40 @@ export class ProfileService {
     return { profile };
   }
 
-  update(id: number, updateProfileDto: UpdateProfileDto) {
-    return `This action updates a #${id} profile`;
-  }
+  async followProfile(
+    currentUserId: number,
+    username: string,
+  ): Promise<ProfileType> {
+    const user = await this.userRepository.findOne({ where: { username } });
 
-  remove(id: number) {
-    return `This action removes a #${id} profile`;
+    if (!user) {
+      throw new HttpException(
+        'Такой пользователь не существует',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (user.id === currentUserId) {
+      throw new HttpException(
+        'Нельзя подписаться на самого себя',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const follow = await this.followRepository.findOne({
+      where: {
+        followerId: currentUserId,
+        followingId: user.id,
+      },
+    });
+
+    if (!follow) {
+      const followToCreate = new FollowEntity();
+      followToCreate.followerId = currentUserId;
+      followToCreate.followingId = user.id;
+      await this.followRepository.save(followToCreate);
+    }
+
+    return { ...user, following: true };
   }
 }
