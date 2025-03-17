@@ -41,22 +41,35 @@ export class UserService {
   }
 
   async create(createUserDto: CreateUserDto): Promise<UserEntity> {
+    const errorResponse: { errors: { [key: string]: string } } = { errors: {} };
+
     const userByEmail = await this.userRepository.findOne({
       where: {
         email: createUserDto.email,
       },
     });
+
     const userByUsername = await this.userRepository.findOne({
       where: {
         username: createUserDto.username,
       },
     });
+
+    if (userByEmail) {
+      errorResponse.errors['email'] = 'Электронная почта уже занята';
+    }
+
+    if (userByUsername) {
+      errorResponse.errors['username'] = 'Имя пользователя уже занято';
+    }
+
     if (userByEmail || userByUsername) {
       throw new HttpException(
         'Электронная почта или юзернейм уже заняты',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
+
     const newUser = new UserEntity();
     Object.assign(newUser, createUserDto);
     const savedUser = await this.userRepository.save(newUser);
@@ -64,7 +77,9 @@ export class UserService {
     return savedUser;
   }
 
-  async findOne(findUserDto: FindUserDto): Promise<UserEntity> {
+  async login(findUserDto: FindUserDto): Promise<UserEntity> {
+    const errorResponse: { errors: { [key: string]: string } } = { errors: {} };
+
     const user = await this.userRepository.findOne({
       where: {
         email: findUserDto.email,
@@ -73,17 +88,15 @@ export class UserService {
     });
 
     if (!user) {
-      throw new HttpException(
-        'Такой почты не существует',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      errorResponse.errors['email'] = 'Такой email не зарегистрирован';
+      throw new HttpException(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
     }
+
     const isValidPassword = await compare(findUserDto.password, user.password!);
+
     if (!isValidPassword) {
-      throw new HttpException(
-        'Пароль введён неверно.',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      errorResponse.errors['password'] = 'Пароль неверен';
+      throw new HttpException(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     delete user.password;

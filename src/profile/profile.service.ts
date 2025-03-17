@@ -1,6 +1,4 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateProfileDto } from './dto/create-profile.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Repository } from 'typeorm';
 import { UserEntity } from '@app/user/entities/user.entity';
 import { ProfileResponseInterface } from '@app/profile/types/profile-response.interface';
@@ -26,7 +24,14 @@ export class ProfileService {
         HttpStatus.NOT_FOUND,
       );
     }
-    return { ...user, following: false };
+
+    const follow = await this.followRepository.findOne({
+      where: {
+        followerId: currentUserId,
+        followingId: user.id,
+      },
+    });
+    return { ...user, following: Boolean(follow) };
   }
 
   buildProfileResponse(profile: ProfileType): ProfileResponseInterface {
@@ -69,5 +74,33 @@ export class ProfileService {
     }
 
     return { ...user, following: true };
+  }
+
+  async unfollowProfile(
+    currentUserId: number,
+    username: string,
+  ): Promise<ProfileType> {
+    const user = await this.userRepository.findOne({ where: { username } });
+
+    if (!user) {
+      throw new HttpException(
+        'Такой пользователь не существует',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (user.id === currentUserId) {
+      throw new HttpException(
+        'Нельзя отписаться от самого себя',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.followRepository.delete({
+      followerId: currentUserId,
+      followingId: user.id,
+    });
+
+    return { ...user, following: false };
   }
 }
